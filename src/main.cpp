@@ -120,11 +120,13 @@ void printCacheConfig()
 void printCacheStats()
 {
   printf("Cache Statistics:\n");
-  if (icacheSets) {
-    printf("  total I-cache accesses:  %10lu\n", icacheRefs);
-    printf("  total I-cache misses:    %10lu\n", icacheMisses);
-    printf("  total I-cache penalties: %10lu\n", icachePenalties);
-    if (icacheRefs > 0) {
+  if (icacheSets)
+  {
+    printf("  total I-cache accesses:  %10lu\n", (unsigned long)icacheRefs);
+    printf("  total I-cache misses:    %10lu\n", (unsigned long)icacheMisses);
+    printf("  total I-cache penalties: %10lu\n", (unsigned long)icachePenalties);
+    if (icacheRefs > 0)
+    {
       printf("  I-cache miss rate:   %17.2f%%\n",
              100.0 * (double)icacheMisses / (double)icacheRefs);
       printf("  avg I-cache access time: %13.2f cycles\n",
@@ -136,11 +138,13 @@ void printCacheStats()
       printf("  avg I-cache access time:          -\n");
     }
   }
-  if (dcacheSets) {
-    printf("  total D-cache accesses:  %10lu\n", dcacheRefs);
-    printf("  total D-cache misses:    %10lu\n", dcacheMisses);
-    printf("  total D-cache penalties: %10lu\n", dcachePenalties);
-    if (dcacheRefs > 0) {
+  if (dcacheSets)
+  {
+    printf("  total D-cache accesses:  %10lu\n", (unsigned long)dcacheRefs);
+    printf("  total D-cache misses:    %10lu\n", (unsigned long)dcacheMisses);
+    printf("  total D-cache penalties: %10lu\n", (unsigned long)dcachePenalties);
+    if (dcacheRefs > 0)
+    {
       printf("  D-cache miss rate:   %17.2f%%\n",
              100.0 * (double)dcacheMisses / (double)dcacheRefs);
       printf("  avg D-cache access time: %13.2f cycles\n",
@@ -152,11 +156,13 @@ void printCacheStats()
       printf("  avg D-cache access time:          -\n");
     }
   }
-  if (l2cacheSets) {
-    printf("  total L2-cache accesses: %10lu\n", l2cacheRefs);
-    printf("  total L2-cache misses:   %10lu\n", l2cacheMisses);
-    printf("  total L2-cache penalties:%10lu\n", l2cachePenalties);
-    if (l2cacheRefs > 0) {
+  if (l2cacheSets)
+  {
+    printf("  total L2-cache accesses: %10lu\n", (unsigned long)l2cacheRefs);
+    printf("  total L2-cache misses:   %10lu\n", (unsigned long)l2cacheMisses);
+    printf("  total L2-cache penalties:%10lu\n", (unsigned long)l2cachePenalties);
+    if (l2cacheRefs > 0)
+    {
       printf("  L2-cache miss rate:  %17.2f%%\n",
              100.0 * (double)l2cacheMisses / (double)l2cacheRefs);
       printf("  avg L2-cache access time:%13.2f cycles\n",
@@ -279,9 +285,10 @@ int main(int argc, char *argv[])
   printStudentInfo();
   printCacheConfig();
   printCacheStats();
-  printf("Total Memory accesses:  %lu\n", totalRefs);
-  printf("Total Access Time: %lu\n", totalPenalties);
-  if (totalRefs > 0) {
+  printf("Total Memory accesses:  %lu\n", (unsigned long)totalRefs);
+  printf("Total Access Time: %lu\n", (unsigned long)totalPenalties);
+  if (totalRefs > 0)
+  {
     printf("avg Memory access time: %13.2f cycles\n",
            (double)totalPenalties / totalRefs);
   }

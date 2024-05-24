@@ -1,17 +1,6 @@
 /*Questions:
-
-
-*/
-
-
-/*Questions:
-
-- What are penalties?
-- How does main work with the traces? How are the variables filled in.
-- Type casted some variables in main due to errors, do you prefer we change the data type in cache.cpp/hpp?
-
-- Segmentation Fault
-
+- check with the prefectch logic 
+- check how should we utilize the inclusive variable
 */
 
 //========================================================//
@@ -144,7 +133,7 @@ void init_cache()
 //
 void clean_cache()
 {
-
+  
   for (int i = 0; i < icacheSets; i++)
   {
     delete[] icache[i];
@@ -170,9 +159,7 @@ void clean_cache()
 uint32_t
 icache_access(uint32_t addr)
 {
-  //
-  // TODO: Implement I$
-  //
+  
   int index = (addr / icacheBlocksize) % (icacheSets); // * icacheAssoc);
   int tag = addr / icacheBlocksize / icacheSets;       // / icacheAssoc;
 
@@ -180,26 +167,31 @@ icache_access(uint32_t addr)
 
   for (int i = 0; i < icacheAssoc; i++)
   {
+    //printf("Checking icache line %d...\n", i);
     if (icache[index][i].tag == tag && icache[index][i].valid)
     {
+      //printf("Cache hit at line %d.\n", i);
       updateLRU(i, icache[index], icacheAssoc);
+      //printf("LRU updated after cache hit.\n");
       return icacheHitTime;
     }
   }
-
+  //printf("Cache miss.\n");
   icacheMisses++;
-
-  uint32_t penalty = icacheHitTime + l2cache_access(addr); // question
+  uint32_t penalty = l2cache_access(addr);
+  //printf("Penalty calculated: %d\n", penalty);
 
   icachePenalties += penalty;
+  //printf("Getting LRU...\n");
   uint32_t evictInd = getLRU(icache[index], icacheAssoc);
+  //printf("LRU obtained: %d\n", evictInd);
   icache[index][evictInd].tag = tag;
   icache[index][evictInd].valid = true;
+  //printf("Updating LRU after cache miss...\n");
   updateLRU(evictInd, icache[index], icacheAssoc);
+  //printf("LRU updated after cache miss.\n");
 
-  // printf("Before icache_access return");
-
-  return penalty;
+  return icacheHitTime + penalty;
 }
 
 uint32_t getLRU(cacheLine *cacheSet, uint32_t cacheAssoc)
@@ -218,7 +210,7 @@ void updateLRU(int mru, cacheLine *cacheSet, uint32_t cacheAssoc)
 { // mru  CacheLine** cache- most recently used
   for (int i = 0; i < cacheAssoc; i++)
   {
-    if (cacheSet[i].lru > mru)
+    if (cacheSet[i].lru > cacheSet[mru].lru)
     {
       cacheSet[i].lru = cacheSet[i].lru - 1;
     }
@@ -236,7 +228,6 @@ dcache_access(uint32_t addr)
   int tag = addr / dcacheBlocksize / dcacheSets;       // / dcacheAssoc;
 
   dcacheRefs++;
-  // printf("Before dcache_access for loop");
 
   for (int i = 0; i < dcacheAssoc; i++)
   {
@@ -246,15 +237,16 @@ dcache_access(uint32_t addr)
       return dcacheHitTime;
     }
   }
+
   dcacheMisses++;
-  uint32_t penalty = dcacheHitTime + l2cache_access(addr);
+  uint32_t penalty = l2cache_access(addr);
   dcachePenalties += penalty;
   uint32_t evictInd = getLRU(dcache[index], dcacheAssoc);
   dcache[index][evictInd].tag = tag;
   dcache[index][evictInd].valid = true;
   updateLRU(evictInd, dcache[index], dcacheAssoc);
 
-  return penalty;
+  return dcacheHitTime + penalty;
   // return 1;
 }
 
@@ -264,35 +256,38 @@ dcache_access(uint32_t addr)
 uint32_t
 l2cache_access(uint32_t addr)
 {
+  // printf("Accessing L2 cache...\n");
   int index = (addr / l2cacheBlocksize) % (l2cacheSets); // * l2cacheAssoc);
   int tag = addr / l2cacheBlocksize / l2cacheSets;       // / l2cacheAssoc;
 
   l2cacheRefs++;
 
-  // printf("Before l2cache_access for loop\n");
-  // printf("addr: %x\n", addr);
-  // printf("index: %d \n", index);
-  // exit(0);
-
   for (int i = 0; i < l2cacheAssoc; i++)
   {
+    // printf("Checking L2 cache line %d...\n", i);
     if (l2cache[index][i].tag == tag && l2cache[index][i].valid)
     {
+      // printf("L2 cache hit at line %d.\n", i);
       updateLRU(i, l2cache[index], l2cacheAssoc);
+      // printf("LRU updated after L2 cache hit.\n");
       return l2cacheHitTime;
     }
   }
-
+  // printf("L2 cache miss.\n");
   l2cacheMisses++;
-  u_int32_t penalty = l2cacheHitTime + memspeed;
+  u_int32_t penalty = memspeed;
+  // printf("Penalty calculated: %d\n", penalty);
   l2cachePenalties += penalty;
+  // printf("Getting LRU...\n");
   uint32_t evictInd = getLRU(l2cache[index], l2cacheAssoc);
+  // printf("LRU obtained: %d\n", evictInd);
   l2cache[index][evictInd].tag = tag;
   l2cache[index][evictInd].valid = true;
+  // printf("Updating LRU after L2 cache miss...\n");
   updateLRU(evictInd, l2cache[index], l2cacheAssoc);
+  // printf("LRU updated after L2 cache miss.\n");
 
-  return penalty;
-  // return 1;
+  return l2cacheHitTime + penalty;
 }
 
 // Predict an address to prefetch on icache with the information of last icache access:
@@ -347,8 +342,8 @@ dcache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
 // Perform a prefetch operation to I$ for the address 'addr'
 void icache_prefetch(uint32_t addr)
 {
-  int index = (addr / icacheBlocksize) % (icacheSets * icacheAssoc);
-  int tag = addr / icacheBlocksize / icacheSets / icacheAssoc;
+  int index = (addr / icacheBlocksize) % (icacheSets);// * icacheAssoc);
+  int tag = addr / icacheBlocksize / icacheSets;// / icacheAssoc;
 
   for (int i = 0; i < icacheAssoc; i++)
   {
@@ -369,8 +364,8 @@ void icache_prefetch(uint32_t addr)
 // Perform a prefetch operation to D$ for the address 'addr'
 void dcache_prefetch(uint32_t addr)
 {
-  int index = (addr / dcacheBlocksize) % (dcacheSets * dcacheAssoc);
-  int tag = addr / dcacheBlocksize / dcacheSets / dcacheAssoc;
+  int index = (addr / dcacheBlocksize) % (dcacheSets);// * dcacheAssoc);
+  int tag = addr / dcacheBlocksize / dcacheSets;// / dcacheAssoc;
 
   for (int i = 0; i < dcacheAssoc; i++)
   {
