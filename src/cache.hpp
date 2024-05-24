@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <cmath>
+#include <cmath>
 
 //
 // Student Information
@@ -68,16 +69,10 @@ extern uint64_t l2cacheRefs;      // L2$ references
 extern uint64_t l2cacheMisses;    // L2$ misses
 extern uint64_t l2cachePenalties; // L2$ penalties
 
+
 //------------------------------------//
 //      Cache Function Prototypes     //
 //------------------------------------//
-
-struct cacheLine
-{
-  bool valid;
-  uint32_t tag;
-  uint32_t lru;
-};
 
 // Initialize the predictor
 //
@@ -89,10 +84,6 @@ void clean_cache();
 // Return the access time for the memory operation
 //
 uint32_t icache_access(uint32_t addr);
-
-void updateLRU(int mru, cacheLine *cacheSet, uint32_t cacheAssoc);
-
-uint32_t getLRU(cacheLine *cacheSet, uint32_t cacheAssoc);
 
 // Perform a memory access through the dcache interface for the address 'addr'
 // Return the access time for the memory operation

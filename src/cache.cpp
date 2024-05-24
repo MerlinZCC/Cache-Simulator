@@ -1,5 +1,11 @@
 /*Questions:
 
+
+*/
+
+
+/*Questions:
+
 - What are penalties?
 - How does main work with the traces? How are the variables filled in.
 - Type casted some variables in main due to errors, do you prefer we change the data type in cache.cpp/hpp?
