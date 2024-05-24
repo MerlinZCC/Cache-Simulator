@@ -170,9 +170,12 @@ icache_access(uint32_t addr)
     //printf("Checking icache line %d...\n", i);
     if (icache[index][i].tag == tag && icache[index][i].valid)
     {
-      //printf("Cache hit at line %d.\n", i);
       updateLRU(i, icache[index], icacheAssoc);
-      //printf("LRU updated after cache hit.\n");
+      if (inclusive){
+        //access the L2 cache
+        //penalty += 
+        l2cache_access(addr);
+      }
       return icacheHitTime;
     }
   }
@@ -226,20 +229,26 @@ dcache_access(uint32_t addr)
 {
   int index = (addr / dcacheBlocksize) % (dcacheSets); // * dcacheAssoc);
   int tag = addr / dcacheBlocksize / dcacheSets;       // / dcacheAssoc;
-
+  uint32_t penalty;
   dcacheRefs++;
-
+  
   for (int i = 0; i < dcacheAssoc; i++)
   {
     if (dcache[index][i].tag == tag && dcache[index][i].valid)
     {
       updateLRU(i, dcache[index], dcacheAssoc);
+      //penalty = dcacheHitTime;
+      if (inclusive){
+        //access the L2 cache
+        //penalty += 
+        l2cache_access(addr);
+      }
       return dcacheHitTime;
     }
   }
 
   dcacheMisses++;
-  uint32_t penalty = l2cache_access(addr);
+  penalty = l2cache_access(addr);
   dcachePenalties += penalty;
   uint32_t evictInd = getLRU(dcache[index], dcacheAssoc);
   dcache[index][evictInd].tag = tag;
@@ -300,10 +309,14 @@ icache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
   static uint32_t prev_addr = 0;
   static uint32_t stride = 0;
   static int count = 0;
+  if (r_or_w == 'r') {
+    return addr + icacheBlocksize;
+  }
 
   if (count == 0)
   {
     prev_addr = addr;
+    count = 1;
   }
   else
   {
@@ -312,7 +325,7 @@ icache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
     {
       count++;
       if (count >= 3)
-      { // tuning parameters
+      {
         return addr + stride;
       }
     }
@@ -333,10 +346,35 @@ icache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
 uint32_t
 dcache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
 {
-  return addr + dcacheBlocksize; // Next line prefetching
-  //
-  // TODO: Implement a better prefetching strategy
-  //
+  static uint32_t d_prev_addr = 0;
+  static uint32_t d_stride = 0;
+  static int d_count = 0;
+
+
+  if (d_count == 0)
+  {
+    d_prev_addr = addr;
+    d_count =1;
+  }
+  else
+  {
+    uint32_t new_stride = addr - d_prev_addr;
+    if (new_stride == d_stride)
+    {
+      d_count++;
+      if (d_count >= 2)
+      {
+        return addr + d_stride;
+      }
+    }
+    else
+    {
+      d_stride = new_stride;
+      d_count = 1;
+    }
+    d_prev_addr = addr;
+  }
+  return addr + dcacheBlocksize;
 }
 
 // Perform a prefetch operation to I$ for the address 'addr'
