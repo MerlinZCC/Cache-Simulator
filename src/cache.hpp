@@ -9,8 +9,10 @@
 #ifndef CACHE_HPP
 #define CACHE_HPP
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <cmath>
 
 //
 // Student Information
@@ -40,36 +42,42 @@ extern uint32_t dcacheAssoc;     // Associativity of the D$
 extern uint32_t dcacheBlocksize; // Blocksize of the D$
 extern uint32_t dcacheHitTime;   // Hit Time of the D$
 
-extern uint32_t l2cacheSets;     // Number of sets in the L2$
-extern uint32_t l2cacheAssoc;    // Associativity of the L2$
-extern uint32_t l2cacheBlocksize;// Blocksize of the L2$
-extern uint32_t l2cacheHitTime;  // Hit Time of the L2$
-extern uint32_t inclusive;       // Indicates if the L2 is inclusive
+extern uint32_t l2cacheSets;      // Number of sets in the L2$
+extern uint32_t l2cacheAssoc;     // Associativity of the L2$
+extern uint32_t l2cacheBlocksize; // Blocksize of the L2$
+extern uint32_t l2cacheHitTime;   // Hit Time of the L2$
+extern uint32_t inclusive;        // Indicates if the L2 is inclusive
 extern uint32_t prefetch;
 
-extern uint32_t blocksize;       // Block/Line size
-extern uint32_t memspeed;        // Latency of Main Memory
+extern uint32_t blocksize; // Block/Line size
+extern uint32_t memspeed;  // Latency of Main Memory
 
 //------------------------------------//
 //          Cache Statistics          //
 //------------------------------------//
 
-extern uint64_t icacheRefs;       // I$ references
-extern uint64_t icacheMisses;     // I$ misses
-extern uint64_t icachePenalties;  // I$ penalties
+extern uint64_t icacheRefs;      // I$ references
+extern uint64_t icacheMisses;    // I$ misses
+extern uint64_t icachePenalties; // I$ penalties
 
-extern uint64_t dcacheRefs;       // D$ references
-extern uint64_t dcacheMisses;     // D$ misses
-extern uint64_t dcachePenalties;  // D$ penalties
+extern uint64_t dcacheRefs;      // D$ references
+extern uint64_t dcacheMisses;    // D$ misses
+extern uint64_t dcachePenalties; // D$ penalties
 
 extern uint64_t l2cacheRefs;      // L2$ references
 extern uint64_t l2cacheMisses;    // L2$ misses
 extern uint64_t l2cachePenalties; // L2$ penalties
 
-
 //------------------------------------//
 //      Cache Function Prototypes     //
 //------------------------------------//
+
+struct cacheLine
+{
+  bool valid;
+  uint32_t tag;
+  uint32_t lru;
+};
 
 // Initialize the predictor
 //
@@ -81,6 +89,10 @@ void clean_cache();
 // Return the access time for the memory operation
 //
 uint32_t icache_access(uint32_t addr);
+
+void updateLRU(int mru, cacheLine *cacheSet, uint32_t cacheAssoc);
+
+uint32_t getLRU(cacheLine *cacheSet, uint32_t cacheAssoc);
 
 // Perform a memory access through the dcache interface for the address 'addr'
 // Return the access time for the memory operation
