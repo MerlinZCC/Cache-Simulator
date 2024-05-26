@@ -170,11 +170,9 @@ icache_access(uint32_t addr)
     //printf("Checking icache line %d...\n", i);
     if (icache[index][i].tag == tag && icache[index][i].valid)
     {
-      updateLRU(i, icache[index], icacheAssoc);
-      if (inclusive){
-        //access the L2 cache
-        //penalty += 
-        l2cache_access(addr);
+      update_lru(i, icache[index], icacheAssoc);
+      if (inclusive && !l2cache_contains(tag)){
+        l2cache_load(addr);
       }
       return icacheHitTime;
     }
@@ -186,18 +184,21 @@ icache_access(uint32_t addr)
 
   icachePenalties += penalty;
   //printf("Getting LRU...\n");
-  uint32_t evictInd = getLRU(icache[index], icacheAssoc);
+  uint32_t evictInd = get_lru(icache[index], icacheAssoc);
   //printf("LRU obtained: %d\n", evictInd);
+  if (inclusive && l2cache_contains(icache[index][evictInd].tag)) {
+    l2cache_evict(icache[index][evictInd].tag);
+  }
   icache[index][evictInd].tag = tag;
   icache[index][evictInd].valid = true;
   //printf("Updating LRU after cache miss...\n");
-  updateLRU(evictInd, icache[index], icacheAssoc);
+  update_lru(evictInd, icache[index], icacheAssoc);
   //printf("LRU updated after cache miss.\n");
 
   return icacheHitTime + penalty;
 }
 
-uint32_t getLRU(cacheLine *cacheSet, uint32_t cacheAssoc)
+uint32_t get_lru(cacheLine *cacheSet, uint32_t cacheAssoc)
 {
   for (int i = 0; i < cacheAssoc; i++)
   {
@@ -209,7 +210,7 @@ uint32_t getLRU(cacheLine *cacheSet, uint32_t cacheAssoc)
   return -1;
 }
 
-void updateLRU(int mru, cacheLine *cacheSet, uint32_t cacheAssoc)
+void update_lru(int mru, cacheLine *cacheSet, uint32_t cacheAssoc)
 { // mru  CacheLine** cache- most recently used
   for (int i = 0; i < cacheAssoc; i++)
   {
@@ -219,6 +220,37 @@ void updateLRU(int mru, cacheLine *cacheSet, uint32_t cacheAssoc)
     }
   }
   cacheSet[mru].lru = cacheAssoc - 1;
+}
+
+bool l2cache_contains(uint32_t tag) {
+  for (int i = 0; i < l2cacheSets; i++) {
+    for (int j = 0; j < l2cacheAssoc; j++) {
+      if (l2cache[i][j].tag == tag && l2cache[i][j].valid) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void l2cache_load(uint32_t addr) {
+  int index = (addr / l2cacheBlocksize) % l2cacheSets;
+  int tag = addr / l2cacheBlocksize / l2cacheSets;
+  uint32_t evictInd = get_lru(l2cache[index], l2cacheAssoc);
+  l2cache[index][evictInd].tag = tag;
+  l2cache[index][evictInd].valid = true;
+  update_lru(evictInd, l2cache[index], l2cacheAssoc);
+}
+
+void l2cache_evict(uint32_t tag) {
+  for (int i = 0; i < l2cacheSets; i++) {
+    for (int j = 0; j < l2cacheAssoc; j++) {
+      if (l2cache[i][j].tag == tag && l2cache[i][j].valid) {
+        l2cache[i][j].valid = false;
+        return;
+      }
+    }
+  }
 }
 
 // Perform a memory access through the dcache interface for the address 'addr'
@@ -236,12 +268,10 @@ dcache_access(uint32_t addr)
   {
     if (dcache[index][i].tag == tag && dcache[index][i].valid)
     {
-      updateLRU(i, dcache[index], dcacheAssoc);
+      update_lru(i, dcache[index], dcacheAssoc);
       //penalty = dcacheHitTime;
-      if (inclusive){
-        //access the L2 cache
-        //penalty += 
-        l2cache_access(addr);
+      if (inclusive && !l2cache_contains(tag)){
+        l2cache_load(addr);
       }
       return dcacheHitTime;
     }
@@ -250,13 +280,16 @@ dcache_access(uint32_t addr)
   dcacheMisses++;
   penalty = l2cache_access(addr);
   dcachePenalties += penalty;
-  uint32_t evictInd = getLRU(dcache[index], dcacheAssoc);
+  uint32_t evictInd = get_lru(dcache[index], dcacheAssoc);
+
+  if (inclusive && l2cache_contains(dcache[index][evictInd].tag)) {
+    l2cache_evict(dcache[index][evictInd].tag);
+  }
   dcache[index][evictInd].tag = tag;
   dcache[index][evictInd].valid = true;
-  updateLRU(evictInd, dcache[index], dcacheAssoc);
+  update_lru(evictInd, dcache[index], dcacheAssoc);
 
   return dcacheHitTime + penalty;
-  // return 1;
 }
 
 // Perform a memory access to the l2cache for the address 'addr'
@@ -277,7 +310,7 @@ l2cache_access(uint32_t addr)
     if (l2cache[index][i].tag == tag && l2cache[index][i].valid)
     {
       // printf("L2 cache hit at line %d.\n", i);
-      updateLRU(i, l2cache[index], l2cacheAssoc);
+      update_lru(i, l2cache[index], l2cacheAssoc);
       // printf("LRU updated after L2 cache hit.\n");
       return l2cacheHitTime;
     }
@@ -288,12 +321,12 @@ l2cache_access(uint32_t addr)
   // printf("Penalty calculated: %d\n", penalty);
   l2cachePenalties += penalty;
   // printf("Getting LRU...\n");
-  uint32_t evictInd = getLRU(l2cache[index], l2cacheAssoc);
+  uint32_t evictInd = get_lru(l2cache[index], l2cacheAssoc);
   // printf("LRU obtained: %d\n", evictInd);
   l2cache[index][evictInd].tag = tag;
   l2cache[index][evictInd].valid = true;
   // printf("Updating LRU after L2 cache miss...\n");
-  updateLRU(evictInd, l2cache[index], l2cacheAssoc);
+  update_lru(evictInd, l2cache[index], l2cacheAssoc);
   // printf("LRU updated after L2 cache miss.\n");
 
   return l2cacheHitTime + penalty;
@@ -387,16 +420,16 @@ void icache_prefetch(uint32_t addr)
   {
     if (icache[index][i].tag == tag)
     {
-      updateLRU(i, icache[index], icacheAssoc);
+      update_lru(i, icache[index], icacheAssoc);
       icache[index][i].valid = true;
       return;
     }
   }
 
-  uint32_t evictInd = getLRU(icache[index], icacheAssoc);
+  uint32_t evictInd = get_lru(icache[index], icacheAssoc);
   icache[index][evictInd].tag = tag;
   icache[index][evictInd].valid = true;
-  updateLRU(evictInd, icache[index], icacheAssoc);
+  update_lru(evictInd, icache[index], icacheAssoc);
 }
 
 // Perform a prefetch operation to D$ for the address 'addr'
@@ -409,14 +442,14 @@ void dcache_prefetch(uint32_t addr)
   {
     if (dcache[index][i].tag == tag)
     {
-      updateLRU(i, dcache[index], dcacheAssoc);
+      update_lru(i, dcache[index], dcacheAssoc);
       dcache[index][i].valid = true;
       return;
     }
   }
 
-  uint32_t evictInd = getLRU(dcache[index], dcacheAssoc);
+  uint32_t evictInd = get_lru(dcache[index], dcacheAssoc);
   dcache[index][evictInd].tag = tag;
   dcache[index][evictInd].valid = true;
-  updateLRU(evictInd, dcache[index], dcacheAssoc);
+  update_lru(evictInd, dcache[index], dcacheAssoc);
 }
