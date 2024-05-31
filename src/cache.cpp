@@ -67,6 +67,12 @@ uint64_t l2cachePenalties; // L2$ penalties
 cacheLine **icache;
 cacheLine **dcache;
 cacheLine **l2cache;
+static uint32_t i_prev_addr;
+static uint32_t i_stride;
+static int i_count;
+static uint32_t d_prev_addr;
+static uint32_t d_stride;
+static int d_count;
 
 //------------------------------------//
 //          Cache Functions           //
@@ -335,35 +341,38 @@ l2cache_access(uint32_t addr)
 uint32_t
 icache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
 {
-  static uint32_t prev_addr = 0;
-  static uint32_t stride = 0;
-  static int count = 0;
-  if (r_or_w == 'r') {
-    return addr + icacheBlocksize;
-  }
 
-  if (count == 0)
+  if (i_count == 0)
   {
-    prev_addr = addr;
-    count = 1;
+    i_prev_addr = addr;
+    i_count = 1;
   }
   else
   {
-    uint32_t new_stride = addr - prev_addr;
-    if (new_stride == stride)
+    uint32_t new_stride = addr - i_prev_addr;
+    // printf("PC: %d\n", pc);
+    // printf("Addr: %d\n", addr);
+    // printf("Stride: %d\n", i_stride);
+    if (new_stride == i_stride)
     {
-      count++;
-      if (count >= 3)
+      i_count++;
+      if (i_count >= 2)
       {
-        return addr + stride;
+        if (i_stride < icacheBlocksize)
+        {
+          return addr + icacheBlocksize;
+        }
+        printf("Stride: %d\n", i_stride);
+        // else
+        return addr + i_stride;
       }
     }
     else
     {
-      stride = new_stride;
-      count = 1;
+      i_stride = new_stride;
+      i_count = 1;
     }
-    prev_addr = addr;
+    i_prev_addr = addr;
   }
   return addr + icacheBlocksize;
 }
@@ -375,15 +384,11 @@ icache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
 uint32_t
 dcache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
 {
-  static uint32_t d_prev_addr = 0;
-  static uint32_t d_stride = 0;
-  static int d_count = 0;
-
 
   if (d_count == 0)
   {
     d_prev_addr = addr;
-    d_count =1;
+    d_count = 1;
   }
   else
   {
@@ -393,6 +398,11 @@ dcache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
       d_count++;
       if (d_count >= 2)
       {
+        if (d_stride < dcacheBlocksize)
+        {
+          return addr + dcacheBlocksize;
+        }
+        // else
         return addr + d_stride;
       }
     }
@@ -409,8 +419,8 @@ dcache_prefetch_addr(uint32_t pc, uint32_t addr, char r_or_w)
 // Perform a prefetch operation to I$ for the address 'addr'
 void icache_prefetch(uint32_t addr)
 {
-  int index = (addr / icacheBlocksize) % (icacheSets);// * icacheAssoc);
-  int tag = addr / icacheBlocksize / icacheSets;// / icacheAssoc;
+  int index = (addr / icacheBlocksize) % (icacheSets); // * icacheAssoc);
+  int tag = addr / icacheBlocksize / icacheSets;       // / icacheAssoc;
 
   for (int i = 0; i < icacheAssoc; i++)
   {
@@ -418,7 +428,7 @@ void icache_prefetch(uint32_t addr)
     {
       update_lru(i, icache[index], icacheAssoc);
       icache[index][i].valid = true;
-      return;
+      return; /////////// Do we need to check valid bit???
     }
   }
 
@@ -431,8 +441,8 @@ void icache_prefetch(uint32_t addr)
 // Perform a prefetch operation to D$ for the address 'addr'
 void dcache_prefetch(uint32_t addr)
 {
-  int index = (addr / dcacheBlocksize) % (dcacheSets);// * dcacheAssoc);
-  int tag = addr / dcacheBlocksize / dcacheSets;// / dcacheAssoc;
+  int index = (addr / dcacheBlocksize) % (dcacheSets); // * dcacheAssoc);
+  int tag = addr / dcacheBlocksize / dcacheSets;       // / dcacheAssoc;
 
   for (int i = 0; i < dcacheAssoc; i++)
   {
