@@ -94,12 +94,9 @@ void update_lru(int mru, cacheLine *cacheSet, uint32_t cacheAssoc);
 
 uint32_t get_lru(cacheLine *cacheSet, uint32_t cacheAssoc);
 
-bool l2cache_contains(uint32_t tag);
+bool cache_contains(cacheLine** cache, int cacheSets, int cacheAssoc, int cacheBlocksize, uint32_t addr);
 
-void l2cache_load(uint32_t addr);
-
-void l2cache_evict(uint32_t tag);
-
+void cache_evict(cacheLine** cache, int cacheSets, int cacheAssoc, int cacheBlocksize, uint32_t addr);
 // Perform a memory access through the dcache interface for the address 'addr'
 // Return the access time for the memory operation
 //

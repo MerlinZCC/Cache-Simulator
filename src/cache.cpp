@@ -159,41 +159,27 @@ void clean_cache()
 uint32_t
 icache_access(uint32_t addr)
 {
-  
-  int index = (addr / icacheBlocksize) % (icacheSets); // * icacheAssoc);
-  int tag = addr / icacheBlocksize / icacheSets;       // / icacheAssoc;
-
+  int index = (addr / icacheBlocksize) % icacheSets;
+  int tag = addr / icacheBlocksize / icacheSets;
   icacheRefs++;
 
   for (int i = 0; i < icacheAssoc; i++)
   {
-    //printf("Checking icache line %d...\n", i);
     if (icache[index][i].tag == tag && icache[index][i].valid)
     {
       update_lru(i, icache[index], icacheAssoc);
-      if (inclusive && !l2cache_contains(tag)){
-        l2cache_load(addr);
-      }
       return icacheHitTime;
     }
   }
-  //printf("Cache miss.\n");
+
   icacheMisses++;
   uint32_t penalty = l2cache_access(addr);
-  //printf("Penalty calculated: %d\n", penalty);
-
   icachePenalties += penalty;
-  //printf("Getting LRU...\n");
   uint32_t evictInd = get_lru(icache[index], icacheAssoc);
-  //printf("LRU obtained: %d\n", evictInd);
-  if (inclusive && l2cache_contains(icache[index][evictInd].tag)) {
-    l2cache_evict(icache[index][evictInd].tag);
-  }
+
   icache[index][evictInd].tag = tag;
   icache[index][evictInd].valid = true;
-  //printf("Updating LRU after cache miss...\n");
   update_lru(evictInd, icache[index], icacheAssoc);
-  //printf("LRU updated after cache miss.\n");
 
   return icacheHitTime + penalty;
 }
@@ -233,22 +219,28 @@ bool l2cache_contains(uint32_t tag) {
   return false;
 }
 
-void l2cache_load(uint32_t addr) {
-  int index = (addr / l2cacheBlocksize) % l2cacheSets;
-  int tag = addr / l2cacheBlocksize / l2cacheSets;
-  uint32_t evictInd = get_lru(l2cache[index], l2cacheAssoc);
-  l2cache[index][evictInd].tag = tag;
-  l2cache[index][evictInd].valid = true;
-  update_lru(evictInd, l2cache[index], l2cacheAssoc);
+// Check if a block with a given address is present in the cache
+bool cache_contains(cacheLine** cache, int cacheSets, int cacheAssoc, int cacheBlocksize, uint32_t addr) {
+  int index = (addr / cacheBlocksize) % cacheSets;
+  int tag = addr / cacheBlocksize / cacheSets;
+
+  for (int i = 0; i < cacheAssoc; i++) {
+    if (cache[index][i].tag == tag && cache[index][i].valid) {
+      return true;
+    }
+  }
+  return false;
 }
 
-void l2cache_evict(uint32_t tag) {
-  for (int i = 0; i < l2cacheSets; i++) {
-    for (int j = 0; j < l2cacheAssoc; j++) {
-      if (l2cache[i][j].tag == tag && l2cache[i][j].valid) {
-        l2cache[i][j].valid = false;
-        return;
-      }
+// Invalidate a block with a given address in the cache
+void cache_evict(cacheLine** cache, int cacheSets, int cacheAssoc, int cacheBlocksize, uint32_t addr) {
+  int index = (addr / cacheBlocksize) % cacheSets;
+  int tag = addr / cacheBlocksize / cacheSets;
+
+  for (int i = 0; i < cacheAssoc; i++) {
+    if (cache[index][i].tag == tag && cache[index][i].valid) {
+      cache[index][i].valid = false;
+      return;
     }
   }
 }
@@ -269,10 +261,6 @@ dcache_access(uint32_t addr)
     if (dcache[index][i].tag == tag && dcache[index][i].valid)
     {
       update_lru(i, dcache[index], dcacheAssoc);
-      //penalty = dcacheHitTime;
-      if (inclusive && !l2cache_contains(tag)){
-        l2cache_load(addr);
-      }
       return dcacheHitTime;
     }
   }
@@ -282,9 +270,6 @@ dcache_access(uint32_t addr)
   dcachePenalties += penalty;
   uint32_t evictInd = get_lru(dcache[index], dcacheAssoc);
 
-  if (inclusive && l2cache_contains(dcache[index][evictInd].tag)) {
-    l2cache_evict(dcache[index][evictInd].tag);
-  }
   dcache[index][evictInd].tag = tag;
   dcache[index][evictInd].valid = true;
   update_lru(evictInd, dcache[index], dcacheAssoc);
@@ -320,9 +305,20 @@ l2cache_access(uint32_t addr)
   u_int32_t penalty = memspeed;
   // printf("Penalty calculated: %d\n", penalty);
   l2cachePenalties += penalty;
+
+  
   // printf("Getting LRU...\n");
   uint32_t evictInd = get_lru(l2cache[index], l2cacheAssoc);
   // printf("LRU obtained: %d\n", evictInd);
+  if (inclusive) {
+    uint32_t evictedAddr = l2cache[index][evictInd].tag * l2cacheBlocksize * l2cacheSets + index * l2cacheBlocksize;
+    if (cache_contains(icache, icacheSets, icacheAssoc, icacheBlocksize, evictedAddr)) {
+        cache_evict(icache, icacheSets, icacheAssoc, icacheBlocksize, evictedAddr);
+    }
+    if (cache_contains(dcache, dcacheSets, dcacheAssoc, dcacheBlocksize, evictedAddr)) {
+        cache_evict(dcache, dcacheSets, dcacheAssoc, dcacheBlocksize, evictedAddr);
+    }
+  }
   l2cache[index][evictInd].tag = tag;
   l2cache[index][evictInd].valid = true;
   // printf("Updating LRU after L2 cache miss...\n");
