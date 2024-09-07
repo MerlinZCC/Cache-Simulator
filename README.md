@@ -5,7 +5,7 @@
 - Stuart Boynton
 
 ## Project Overview
-This project implements a **Cache Simulator** that models the behavior of a processor cache. We simulate an Instruction cache (I-Cache), a Data cache (D-Cache), and a Level 2 cache (L2-Cache). The simulator supports **inclusive** and **non-inclusive** L2 cache configurations and two prefetching methods: **Next-line Prefetching** and a custom **Stride Prefetching** algorithm. Our code follows the Least Recently Used (LRU) replacement policy.
+This project, implemented in C++, simulates a **Cache Simulator** that models the behavior of a processor cache. We simulate an Instruction cache (I-Cache), a Data cache (D-Cache), and a Level 2 cache (L2-Cache). The simulator supports **inclusive** and **non-inclusive** L2 cache configurations and two prefetching methods: **Next-line Prefetching** and a custom **Stride Prefetching** algorithm. Our code follows the Least Recently Used (LRU) replacement policy.
 
 
 ---
