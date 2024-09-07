@@ -1,12 +1,11 @@
 # Cache Simulator Project
 
 ## Team
-- Chengcheng Zhang
-- Stuart Boynton
+- **Chengcheng Zhang**
+- **Stuart Boynton**
 
 ## Project Overview
-This project, implemented in C++, simulates a **Cache Simulator** that models the behavior of a processor cache. We simulate an Instruction cache (I-Cache), a Data cache (D-Cache), and a Level 2 cache (L2-Cache). The simulator supports **inclusive** and **non-inclusive** L2 cache configurations and two prefetching methods: **Next-line Prefetching** and a custom **Stride Prefetching** algorithm. Our code follows the Least Recently Used (LRU) replacement policy.
-
+This project, implemented in **C++**, simulates a **Cache Simulator** that models the behavior of a processor cache. We simulate an Instruction cache (I-Cache), a Data cache (D-Cache), and a Level 2 cache (L2-Cache). The simulator supports **inclusive** and **non-inclusive** L2 cache configurations and two prefetching methods: **Next-line Prefetching** and a custom **Stride Prefetching** algorithm. Our code follows the Least Recently Used (LRU) replacement policy.
 
 ---
 
@@ -21,12 +20,13 @@ This project, implemented in C++, simulates a **Cache Simulator** that models th
    - With Prefetching
    - Effect of Set Associativity
 4. [Running the Code](#running-the-code)
+5. [Conclusion](#conclusion)
 
 ---
 
 ## Introduction
 
-The goal of this project is to simulate the performance of a cache hierarchy using given traces of real programs. The simulator models the cache's behavior, measures total access time, and evaluates the impact of various configurations and optimization techniques (e.g., prefetching).
+The goal of this project is to simulate the performance of a cache hierarchy using given traces of real programs. The simulator models the cache's behavior, measures total access time, and evaluates the impact of various configurations and optimization techniques (e.g., prefetching). Understanding these behaviors is crucial for designing efficient and high-performing computer architectures.
 
 ---
 
@@ -81,6 +81,7 @@ This ensures that the least recently used block is evicted first when the cache 
 
 - **Observation:** As the set associativity increases, the total access time decreases. However, higher set associativity comes with increased hardware complexity and slower hit times, as multiple tags must be compared to locate the requested block.
 
+
 ---
 
 ## Running the Code
@@ -106,4 +107,9 @@ To run the simulator with **MIPS R10K** configuration:
 ```
 ./cache --icache=128:2:128:2 --dcache=64:4:128:2 --l2cache=128:8:128:50 --memspeed=100
 ```
+
+## Conclusion
+
+This project has deepened our understanding of cache mechanisms and their impact on processor performance. By simulating various configurations and prefetching techniques, we gained valuable insights into how different design choices affect cache efficiency. This knowledge is essential for optimizing performance in real-world applications.
+
 
