@@ -5,7 +5,7 @@
 - **Stuart Boynton**
 
 ## Project Overview
-This project, implemented in **C++**, simulates a **Cache Simulator** that models the behavior of a processor cache. We simulate an Instruction cache (I-Cache), a Data cache (D-Cache), and a Level 2 cache (L2-Cache). The simulator supports **inclusive** and **non-inclusive** L2 cache configurations and two prefetching methods: **Next-line Prefetching** and a custom **Stride Prefetching** algorithm. Our code follows the Least Recently Used (LRU) replacement policy.
+This project, implemented in **C++**, is a part of our **Computer Architecture** course. It simulates a **Cache Simulator** that models the behavior of a processor cache, including Instruction cache (I-Cache), Data cache (D-Cache), and Level 2 cache (L2-Cache). The simulator supports **inclusive** and **non-inclusive** L2 cache configurations and two prefetching methods: **Next-line Prefetching** and a custom **Stride Prefetching** algorithm. Our code follows the Least Recently Used (LRU) replacement policy.
 
 ---
 
@@ -26,7 +26,7 @@ This project, implemented in **C++**, simulates a **Cache Simulator** that model
 
 ## Introduction
 
-The goal of this project is to simulate the performance of a cache hierarchy using given traces of real programs. The simulator models the cache's behavior, measures total access time, and evaluates the impact of various configurations and optimization techniques (e.g., prefetching). Understanding these behaviors is crucial for designing efficient and high-performing computer architectures.
+The goal of this project, part of our **Computer Architecture** coursework, is to simulate the performance of a cache hierarchy using given traces of real programs. The simulator models the cache's behavior, measures total access time, and evaluates the impact of various configurations and optimization techniques (e.g., prefetching). Understanding these behaviors is crucial for designing efficient and high-performing computer architectures.
 
 ---
 
@@ -110,6 +110,4 @@ To run the simulator with **MIPS R10K** configuration:
 
 ## Conclusion
 
-This project has deepened our understanding of cache mechanisms and their impact on processor performance. By simulating various configurations and prefetching techniques, we gained valuable insights into how different design choices affect cache efficiency. This knowledge is essential for optimizing performance in real-world applications.
-
-
+This project has deepened our understanding of cache mechanisms and their impact on processor performance, a critical aspect of **Computer Architecture**. By simulating various configurations and prefetching techniques, we gained valuable insights into how different design choices affect cache efficiency. This knowledge is essential for optimizing performance in real-world applications.
